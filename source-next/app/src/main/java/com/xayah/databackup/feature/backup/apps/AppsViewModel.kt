@@ -5,6 +5,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.viewModelScope
 import com.xayah.databackup.App
+import com.xayah.databackup.feature.backup.Statistics
 import com.xayah.databackup.util.BaseViewModel
 import com.xayah.databackup.util.DatabaseHelper
 import com.xayah.databackup.util.FilterBackupUser
@@ -33,13 +34,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-data object UiState
+data class UiState(
+    val searchQuery: String = "",
+)
 
 open class AppsViewModel : BaseViewModel() {
-    private val _uiState = MutableStateFlow(UiState)
+    private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
     val apps = combine(
         DatabaseHelper.appDao.loadFlowApps(),
         App.application.readInt(FilterBackupUser),
@@ -47,16 +52,35 @@ open class AppsViewModel : BaseViewModel() {
         App.application.readEnum(SortsSequenceBackup),
         App.application.readBoolean(FiltersUserAppsBackup),
         App.application.readBoolean(FiltersSystemAppsBackup),
-    ) { apps, userId, sortType, sortSequence, filterUserApps, filterSystemApps ->
-        when (sortType) {
-            SortsType.A2Z -> apps.sortByA2Z(sortSequence)
-            SortsType.DATA_SIZE -> apps.sortByDataSize(sortSequence)
-            SortsType.INSTALL_TIME -> apps.sortByInstallTime(sortSequence)
-            SortsType.UPDATE_TIME -> apps.sortByUpdateTime(sortSequence)
-        }.filter(userId, filterUserApps, filterSystemApps)
+        _uiState.map { it.searchQuery },
+    ) { apps, userId, sortType, sortSequence, filterUserApps, filterSystemApps, searchQuery ->
+        val filteredApps = apps.filter(userId, filterUserApps, filterSystemApps)
+        val sortedApps = when (sortType) {
+            SortsType.A2Z -> filteredApps.sortByA2Z(sortSequence)
+            SortsType.DATA_SIZE -> filteredApps.sortByDataSize(sortSequence)
+            SortsType.INSTALL_TIME -> filteredApps.sortByInstallTime(sortSequence)
+            SortsType.UPDATE_TIME -> filteredApps.sortByUpdateTime(sortSequence)
+        }
+        if (searchQuery.isEmpty()) {
+            sortedApps
+        } else {
+            sortedApps.filter { it.info.label.contains(searchQuery, ignoreCase = true) || it.packageName.contains(searchQuery, ignoreCase = true) }
+        }
     }.stateIn(
         scope = viewModelScope,
         initialValue = listOf(),
+        started = SharingStarted.WhileSubscribed(5_000),
+    )
+
+    val statistics = apps.map { apps ->
+        Statistics(
+            selectedCount = apps.count { it.toggleableState != ToggleableState.Off },
+            totalCount = apps.size,
+            selectedSize = apps.sumOf { it.selectedBytes }
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        initialValue = Statistics(),
         started = SharingStarted.WhileSubscribed(5_000),
     )
 
@@ -133,5 +157,9 @@ open class AppsViewModel : BaseViewModel() {
         withLock(Dispatchers.IO) {
             App.application.saveBoolean(key, value)
         }
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 }

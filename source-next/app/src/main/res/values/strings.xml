@@ -430,4 +430,12 @@
     <string name="users">Users</string>
     <string name="ascending">Ascending</string>
     <string name="descending">Descending</string>
+    <string name="args_items_selected_stats">%1$d/%2$d items selected • %3$s</string>
+    <string name="args_items_selected">%1$d/%2$d items selected</string>
+    <string name="int_data">Int. Data</string>
+    <string name="ext_data">Ext. Data</string>
+    <string name="obb_and_media">OBB &amp; Media</string>
+    <string name="networks">Networks</string>
+    <string name="call_logs">Call logs</string>
+    <string name="list_is_empty">List is empty</string>
 </resources>
