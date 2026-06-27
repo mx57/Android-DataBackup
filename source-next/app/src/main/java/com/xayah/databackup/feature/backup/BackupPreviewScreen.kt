@@ -25,10 +25,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.xayah.databackup.R
 import com.xayah.databackup.feature.BackupApps
@@ -38,8 +41,12 @@ import com.xayah.databackup.util.navigateSafely
 import com.xayah.databackup.util.popBackStackSafely
 
 @Composable
-fun BackupPreviewScreen(navController: NavHostController) {
+fun BackupPreviewScreen(
+    navController: NavHostController,
+    viewModel: BackupViewModel = viewModel(),
+) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val appsStats by viewModel.appsStatistics.collectAsStateWithLifecycle()
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -84,8 +91,8 @@ fun BackupPreviewScreen(navController: NavHostController) {
                         .fillMaxWidth(1f)
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_layout_grid),
-                    title = "Apps",
-                    subtitle = "13/79 items selected"
+                    title = stringResource(R.string.apps),
+                    subtitle = stringResource(R.string.args_items_selected, appsStats.selectedCount, appsStats.totalCount)
                 ) {
                     navController.navigateSafely(BackupApps)
                 }
@@ -95,8 +102,8 @@ fun BackupPreviewScreen(navController: NavHostController) {
                         .fillMaxWidth(1f)
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_folder),
-                    title = "Files",
-                    subtitle = "13/79 items selected"
+                    title = stringResource(R.string.files),
+                    subtitle = stringResource(R.string.no_item_selected)
                 ) {}
 
                 SelectableActionButton(
@@ -104,8 +111,8 @@ fun BackupPreviewScreen(navController: NavHostController) {
                         .fillMaxWidth(1f)
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_wifi),
-                    title = "Networks",
-                    subtitle = "No items selected"
+                    title = stringResource(R.string.networks),
+                    subtitle = stringResource(R.string.no_item_selected)
                 ) {}
 
                 SelectableActionButton(
@@ -113,8 +120,8 @@ fun BackupPreviewScreen(navController: NavHostController) {
                         .fillMaxWidth(1f)
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_user_round),
-                    title = "Contacts",
-                    subtitle = "No items selected"
+                    title = stringResource(R.string.backup_contacts),
+                    subtitle = stringResource(R.string.no_item_selected)
                 ) {}
 
                 SelectableActionButton(
@@ -122,8 +129,8 @@ fun BackupPreviewScreen(navController: NavHostController) {
                         .fillMaxWidth(1f)
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_message_circle),
-                    title = "Messages",
-                    subtitle = "No items selected"
+                    title = stringResource(R.string.backup_messages),
+                    subtitle = stringResource(R.string.no_item_selected)
                 ) {}
 
                 SelectableActionButton(
@@ -131,8 +138,8 @@ fun BackupPreviewScreen(navController: NavHostController) {
                         .fillMaxWidth(1f)
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_phone),
-                    title = "Call logs",
-                    subtitle = "No items selected"
+                    title = stringResource(R.string.call_logs),
+                    subtitle = stringResource(R.string.no_item_selected)
                 ) {}
 
                 Spacer(modifier = Modifier.height(0.dp))

@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -60,6 +61,7 @@ import com.xayah.databackup.ui.component.AppListItem
 import com.xayah.databackup.ui.component.FilterButton
 import com.xayah.databackup.ui.component.filterButtonSecondaryColors
 import com.xayah.databackup.ui.component.horizontalFadingEdges
+import com.xayah.databackup.util.formatToStorageSize
 import com.xayah.databackup.util.FilterBackupUser
 import com.xayah.databackup.util.FiltersSystemAppsBackup
 import com.xayah.databackup.util.FiltersUserAppsBackup
@@ -86,9 +88,12 @@ fun BackupAppsScreen(
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val apps by viewModel.apps.collectAsStateWithLifecycle()
+    val stats by viewModel.statistics.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val filterSheetState = rememberModalBottomSheetState()
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showSearchBar by remember { mutableStateOf(false) }
     val lazyListState = rememberLazyListState()
     Scaffold(
         modifier = Modifier
@@ -97,19 +102,47 @@ fun BackupAppsScreen(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.select_apps),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    if (showSearchBar) {
+                        OutlinedTextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 16.dp),
+                            value = uiState.searchQuery,
+                            onValueChange = { viewModel.setSearchQuery(it) },
+                            placeholder = { Text(text = stringResource(R.string.search)) },
+                            singleLine = true,
+                            trailingIcon = {
+                                IconButton(onClick = {
+                                    viewModel.setSearchQuery("")
+                                    showSearchBar = false
+                                }) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_circle_x),
+                                        contentDescription = null
+                                    )
+                                }
+                            }
                         )
-                        Text(
-                            text = "13/79 items selected • 1.6 GB",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    } else {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.select_apps),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.args_items_selected_stats,
+                                    stats.selectedCount,
+                                    stats.totalCount,
+                                    stats.selectedSize.formatToStorageSize
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
 
                 },
@@ -128,7 +161,7 @@ fun BackupAppsScreen(
                             contentDescription = stringResource(R.string.filters)
                         )
                     }
-                    IconButton(onClick = { /* do something */ }) {
+                    IconButton(onClick = { showSearchBar = showSearchBar.not() }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_search),
                             contentDescription = stringResource(R.string.search)
@@ -151,7 +184,7 @@ fun BackupAppsScreen(
                             contentDescription = null
                         )
                         Text(
-                            text = "List is empty",
+                            text = stringResource(R.string.list_is_empty),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.labelLarge,
