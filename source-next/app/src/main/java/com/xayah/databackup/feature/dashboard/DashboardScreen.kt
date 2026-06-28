@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -31,18 +32,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.xayah.databackup.App
 import com.xayah.databackup.BuildConfig
 import com.xayah.databackup.R
 import com.xayah.databackup.feature.Backup
 import com.xayah.databackup.ui.component.ActionButton
 import com.xayah.databackup.ui.component.SmallActionButton
 import com.xayah.databackup.ui.component.StorageCard
+import com.xayah.databackup.util.BackupDir
+import com.xayah.databackup.util.formatToStorageSize
 import com.xayah.databackup.util.navigateSafely
+import com.xayah.databackup.util.readString
 
 @Composable
-fun DashboardScreen(navController: NavHostController) {
+fun DashboardScreen(navController: NavHostController, viewModel: DashboardViewModel = viewModel()) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val storageStats by viewModel.storageStats.collectAsStateWithLifecycle()
+    val backupDir by App.application.readString(BackupDir).collectAsStateWithLifecycle(initialValue = BackupDir.second)
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -98,18 +107,26 @@ fun DashboardScreen(navController: NavHostController) {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                val total = storageStats.totalBytes.toFloat()
+                val freeRatio = if (total > 0) storageStats.freeBytes / total else 0f
+                val backupsRatio = if (total > 0) storageStats.backupsBytes / total else 0f
+                val otherRatio = if (total > 0) storageStats.otherBytes / total else 0f
+                val usedPercent = if (total > 0) ((total - storageStats.freeBytes) / total * 100).toInt() else 0
+
                 StorageCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight(),
-                    free = 0.25f,
-                    other = 0.5f,
-                    backups = 0.25f,
-                    title = "Internal storage",
-                    subtitle = "/data/media/0/DataBackup",
-                    progress = "28%",
-                    storage = "52 GB",
-                ) {}
+                    free = freeRatio,
+                    other = otherRatio,
+                    backups = backupsRatio,
+                    title = stringResource(R.string.internal_storage),
+                    subtitle = backupDir,
+                    progress = "$usedPercent%",
+                    storage = (storageStats.totalBytes - storageStats.freeBytes).formatToStorageSize,
+                ) {
+                    viewModel.refreshStorageStats()
+                }
 
                 Text("Actions", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
 

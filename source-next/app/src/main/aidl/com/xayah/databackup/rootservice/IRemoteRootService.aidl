@@ -4,4 +4,5 @@ interface IRemoteRootService {
     ParcelFileDescriptor getInstalledAppInfos();
     ParcelFileDescriptor getInstalledAppStorages();
     List<UserInfo> getUsers();
+    long getDirSize(String path);
 }
