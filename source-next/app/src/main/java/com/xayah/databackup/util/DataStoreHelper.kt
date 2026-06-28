@@ -68,3 +68,7 @@ val FiltersUserAppsBackup = Pair(KeyFiltersUserAppsBackup, DefFiltersUserAppsBac
 val KeyFiltersSystemAppsBackup = booleanPreferencesKey("filters_system_apps_backup")
 const val DefFiltersSystemAppsBackup = false
 val FiltersSystemAppsBackup = Pair(KeyFiltersSystemAppsBackup, DefFiltersSystemAppsBackup)
+
+val KeyBackupDir = stringPreferencesKey("backup_dir")
+const val DefBackupDir = "/data/media/0/DataBackup"
+val BackupDir = Pair(KeyBackupDir, DefBackupDir)

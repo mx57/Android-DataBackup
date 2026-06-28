@@ -154,6 +154,10 @@ object RemoteRootService {
         override fun getUsers(): List<UserInfo> {
             return mUserManager.users
         }
+
+        override fun getDirSize(path: String): Long {
+            return NativeLib.calculateTreeSize(path)
+        }
     }
 
     private fun destroyService() {
@@ -260,5 +264,9 @@ object RemoteRootService {
 
     suspend fun getUsers(): List<UserInfo> {
         return getService()?.users ?: listOf()
+    }
+
+    suspend fun getDirSize(path: String): Long {
+        return getService()?.getDirSize(path) ?: 0L
     }
 }
