@@ -162,4 +162,17 @@ open class AppsViewModel : BaseViewModel() {
     fun setSearchQuery(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
+
+    fun selectAllFiltered(userId: Int, toggleableState: ToggleableState) {
+        val packageNames = apps.value.map { it.packageName }
+        if (packageNames.isEmpty()) return
+        withLock(Dispatchers.IO) {
+            val selected = when (toggleableState) {
+                ToggleableState.On -> false
+                ToggleableState.Off -> true
+                ToggleableState.Indeterminate -> true
+            }
+            DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
+        }
+    }
 }

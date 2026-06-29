@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -90,6 +92,7 @@ fun BackupAppsScreen(
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val stats by viewModel.statistics.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filterUser by context.readInt(FilterBackupUser).collectAsStateWithLifecycle(initialValue = FilterBackupUser.second)
     val scope = rememberCoroutineScope()
     val filterSheetState = rememberModalBottomSheetState()
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -155,6 +158,40 @@ fun BackupAppsScreen(
                     }
                 },
                 actions = {
+                    if (showSearchBar.not()) {
+                        val selectAllState = remember(apps) {
+                            if (apps.isEmpty()) {
+                                ToggleableState.Off
+                            } else {
+                                var hasSelected = false
+                                var hasUnselected = false
+                                for (app in apps) {
+                                    when (app.toggleableState) {
+                                        ToggleableState.On -> hasSelected = true
+                                        ToggleableState.Off -> hasUnselected = true
+                                        ToggleableState.Indeterminate -> {
+                                            hasSelected = true
+                                            hasUnselected = true
+                                        }
+                                    }
+                                    if (hasSelected && hasUnselected) break
+                                }
+
+                                when {
+                                    hasSelected && hasUnselected -> ToggleableState.Indeterminate
+                                    hasSelected -> ToggleableState.On
+                                    else -> ToggleableState.Off
+                                }
+                            }
+                        }
+                        TriStateCheckbox(
+                            state = selectAllState,
+                            onClick = {
+                                viewModel.selectAllFiltered(filterUser, selectAllState)
+                            }
+                        )
+                    }
+
                     IconButton(onClick = { showFilterSheet = true }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_funnel),
