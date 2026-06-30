@@ -37,6 +37,7 @@ import com.xayah.databackup.R
 import com.xayah.databackup.feature.BackupApps
 import com.xayah.databackup.ui.component.SelectableActionButton
 import com.xayah.databackup.ui.component.verticalFadingEdges
+import com.xayah.databackup.util.LogHelper
 import com.xayah.databackup.util.navigateSafely
 import com.xayah.databackup.util.popBackStackSafely
 
@@ -45,6 +46,7 @@ fun BackupPreviewScreen(
     navController: NavHostController,
     viewModel: BackupViewModel = viewModel(),
 ) {
+    val TAG = "BackupPreviewScreen"
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val appsStats by viewModel.appsStatistics.collectAsStateWithLifecycle()
     Scaffold(
@@ -92,7 +94,9 @@ fun BackupPreviewScreen(
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_layout_grid),
                     title = stringResource(R.string.apps),
-                    subtitle = stringResource(R.string.args_items_selected, appsStats.selectedCount, appsStats.totalCount)
+                    subtitle = stringResource(R.string.args_items_selected, appsStats.selectedCount, appsStats.totalCount),
+                    checked = appsStats.isAnySelected,
+                    onCheckedChange = { viewModel.selectAllApps(it) }
                 ) {
                     navController.navigateSafely(BackupApps)
                 }
@@ -103,7 +107,9 @@ fun BackupPreviewScreen(
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_folder),
                     title = stringResource(R.string.files),
-                    subtitle = stringResource(R.string.no_item_selected)
+                    subtitle = stringResource(R.string.no_item_selected),
+                    checked = false,
+                    onCheckedChange = null
                 ) {}
 
                 SelectableActionButton(
@@ -112,7 +118,9 @@ fun BackupPreviewScreen(
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_wifi),
                     title = stringResource(R.string.networks),
-                    subtitle = stringResource(R.string.no_item_selected)
+                    subtitle = stringResource(R.string.no_item_selected),
+                    checked = false,
+                    onCheckedChange = null
                 ) {}
 
                 SelectableActionButton(
@@ -121,7 +129,9 @@ fun BackupPreviewScreen(
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_user_round),
                     title = stringResource(R.string.backup_contacts),
-                    subtitle = stringResource(R.string.no_item_selected)
+                    subtitle = stringResource(R.string.no_item_selected),
+                    checked = false,
+                    onCheckedChange = null
                 ) {}
 
                 SelectableActionButton(
@@ -130,7 +140,9 @@ fun BackupPreviewScreen(
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_message_circle),
                     title = stringResource(R.string.backup_messages),
-                    subtitle = stringResource(R.string.no_item_selected)
+                    subtitle = stringResource(R.string.no_item_selected),
+                    checked = false,
+                    onCheckedChange = null
                 ) {}
 
                 SelectableActionButton(
@@ -139,7 +151,9 @@ fun BackupPreviewScreen(
                         .wrapContentSize(),
                     icon = ImageVector.vectorResource(R.drawable.ic_phone),
                     title = stringResource(R.string.call_logs),
-                    subtitle = stringResource(R.string.no_item_selected)
+                    subtitle = stringResource(R.string.no_item_selected),
+                    checked = false,
+                    onCheckedChange = null
                 ) {}
 
                 Spacer(modifier = Modifier.height(0.dp))
@@ -156,7 +170,8 @@ fun BackupPreviewScreen(
 
                 Button(
                     modifier = Modifier.wrapContentSize(),
-                    onClick = { }
+                    enabled = appsStats.isAnySelected,
+                    onClick = { LogHelper.d(TAG, "Initiating backup process...") }
                 ) {
                     Text(text = stringResource(R.string.next))
                 }
