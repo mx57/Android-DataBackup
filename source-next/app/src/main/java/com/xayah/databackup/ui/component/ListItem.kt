@@ -80,12 +80,10 @@ fun AppListItem(
                 ) {
                     var icon: Drawable? by remember { mutableStateOf(null) }
                     LaunchedEffect(app.pkgUserKey) {
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                icon = runCatching { context.packageManager.getApplicationIcon(app.packageName) }.getOrNull()
-                                if (icon == null) {
-                                    icon = AppCompatResources.getDrawable(context, android.R.drawable.sym_def_app_icon)
-                                }
+                        withContext(Dispatchers.IO) {
+                            icon = runCatching { context.packageManager.getApplicationIcon(app.packageName) }.getOrNull()
+                            if (icon == null) {
+                                icon = AppCompatResources.getDrawable(context, android.R.drawable.sym_def_app_icon)
                             }
                         }
                     }

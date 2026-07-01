@@ -9,3 +9,7 @@
 ## 2025-05-25 - [Reactive Multi-User Selection State]
 **Инсайт:** The `BackupPreviewScreen` used hardcoded selection states, creating a "dead end" UI. Managing mass selection across multiple users requires grouping package names by `userId` to use optimized DAO `IN (:packageNames)` queries effectively.
 **Действие:** Enhanced `SelectableActionButton` to be state-aware. Updated `BackupViewModel` to handle multi-user mass selection by grouping apps before database updates. Synchronized the "Next" button state with the reactive `isAnySelected` property in `Statistics`.
+
+## 2025-06-01 - [Thread Safety & UI Processing]
+**Инсайт:** Reactive flows in ViewModels performing O(N) operations (filtering, sorting lists of installed apps) were running on the Main thread by default, leading to potential frame drops during UI updates. Additionally, redundant nested coroutine scopes in Composables hindered efficient task cancellation.
+**Действие:** Applied `flowOn(Dispatchers.Default)` to all performance-critical flows in ViewModels. Refactored UI-only state (Select All checkbox) into reactive ViewModel properties. Eliminated redundant `scope.launch` inside `LaunchedEffect` to ensure proper resource management and faster UI response.

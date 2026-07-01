@@ -90,6 +90,7 @@ fun BackupAppsScreen(
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val apps by viewModel.apps.collectAsStateWithLifecycle()
+    val selectAllState by viewModel.selectAllState.collectAsStateWithLifecycle()
     val stats by viewModel.statistics.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val filterUser by context.readInt(FilterBackupUser).collectAsStateWithLifecycle(initialValue = FilterBackupUser.second)
@@ -159,31 +160,6 @@ fun BackupAppsScreen(
                 },
                 actions = {
                     if (showSearchBar.not()) {
-                        val selectAllState = remember(apps) {
-                            if (apps.isEmpty()) {
-                                ToggleableState.Off
-                            } else {
-                                var hasSelected = false
-                                var hasUnselected = false
-                                for (app in apps) {
-                                    when (app.toggleableState) {
-                                        ToggleableState.On -> hasSelected = true
-                                        ToggleableState.Off -> hasUnselected = true
-                                        ToggleableState.Indeterminate -> {
-                                            hasSelected = true
-                                            hasUnselected = true
-                                        }
-                                    }
-                                    if (hasSelected && hasUnselected) break
-                                }
-
-                                when {
-                                    hasSelected && hasUnselected -> ToggleableState.Indeterminate
-                                    hasSelected -> ToggleableState.On
-                                    else -> ToggleableState.Off
-                                }
-                            }
-                        }
                         TriStateCheckbox(
                             state = selectAllState,
                             onClick = {
@@ -230,13 +206,6 @@ fun BackupAppsScreen(
                     }
                 } else {
                     LazyColumn(state = lazyListState) {
-                        Snapshot.withoutReadObservation {
-                            lazyListState.requestScrollToItem(
-                                index = lazyListState.firstVisibleItemIndex,
-                                scrollOffset = lazyListState.firstVisibleItemScrollOffset
-                            )
-                        }
-
                         items(items = apps, key = { it.pkgUserKey }) { app ->
                             AppListItem(
                                 modifier = Modifier.animateItem(),
@@ -271,10 +240,8 @@ fun BackupAppsScreen(
                     .collectAsStateWithLifecycle(initialValue = FiltersSystemAppsBackup.second)
                 var users by remember { mutableStateOf(listOf<UserInfo>()) }
                 LaunchedEffect(null) {
-                    scope.launch {
-                        withContext(Dispatchers.Default) {
-                            users = RemoteRootService.getUsers()
-                        }
+                    withContext(Dispatchers.Default) {
+                        users = RemoteRootService.getUsers()
                     }
                 }
 

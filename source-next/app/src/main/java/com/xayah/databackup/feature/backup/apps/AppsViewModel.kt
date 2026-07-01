@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -66,7 +67,7 @@ open class AppsViewModel : BaseViewModel() {
         } else {
             sortedApps.filter { it.info.label.contains(searchQuery, ignoreCase = true) || it.packageName.contains(searchQuery, ignoreCase = true) }
         }
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         initialValue = listOf(),
         started = SharingStarted.WhileSubscribed(5_000),
@@ -78,9 +79,39 @@ open class AppsViewModel : BaseViewModel() {
             totalCount = apps.size,
             selectedSize = apps.sumOf { it.selectedBytes }
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         initialValue = Statistics(),
+        started = SharingStarted.WhileSubscribed(5_000),
+    )
+
+    val selectAllState = apps.map { apps ->
+        if (apps.isEmpty()) {
+            ToggleableState.Off
+        } else {
+            var hasSelected = false
+            var hasUnselected = false
+            for (app in apps) {
+                when (app.toggleableState) {
+                    ToggleableState.On -> hasSelected = true
+                    ToggleableState.Off -> hasUnselected = true
+                    ToggleableState.Indeterminate -> {
+                        hasSelected = true
+                        hasUnselected = true
+                    }
+                }
+                if (hasSelected && hasUnselected) break
+            }
+
+            when {
+                hasSelected && hasUnselected -> ToggleableState.Indeterminate
+                hasSelected -> ToggleableState.On
+                else -> ToggleableState.Off
+            }
+        }
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        initialValue = ToggleableState.Off,
         started = SharingStarted.WhileSubscribed(5_000),
     )
 
