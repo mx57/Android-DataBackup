@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -27,7 +28,7 @@ open class BackupViewModel : BaseViewModel() {
             selectedSize = apps.sumOf { it.selectedBytes },
             isAnySelected = selectedCount > 0,
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         initialValue = Statistics(),
         started = SharingStarted.WhileSubscribed(5_000),
