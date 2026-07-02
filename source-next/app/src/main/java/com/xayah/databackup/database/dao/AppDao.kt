@@ -5,6 +5,7 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.xayah.databackup.database.entity.App
 import com.xayah.databackup.database.entity.AppInfo
+import com.xayah.databackup.database.entity.AppParcelable
 import com.xayah.databackup.database.entity.AppStorage
 import kotlinx.coroutines.flow.Flow
 
@@ -18,6 +19,9 @@ interface AppDao {
 
     @Upsert(entity = App::class)
     suspend fun upsertStorage(apps: List<AppStorage>)
+
+    @Upsert(entity = App::class)
+    suspend fun upsertParcelable(apps: List<AppParcelable>)
 
     @Query("SELECT * from apps")
     fun loadFlowApps(): Flow<List<App>>

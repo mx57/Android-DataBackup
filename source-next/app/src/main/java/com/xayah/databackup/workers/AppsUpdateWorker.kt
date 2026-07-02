@@ -29,17 +29,11 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
     override suspend fun doWork(): Result {
         setForeground(getForegroundInfo())
         withContext(Dispatchers.Default) {
-            val appInfos = RemoteRootService.getInstalledAppInfos()
             runCatching {
-                DatabaseHelper.appDao.upsertInfo(appInfos)
+                val apps = RemoteRootService.getInstalledApps()
+                DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
-                LogHelper.e(TAG, "Failed to update app infos.", it)
-            }
-            val appStorages = RemoteRootService.getInstalledAppStorages()
-            runCatching {
-                DatabaseHelper.appDao.upsertStorage(appStorages)
-            }.onFailure {
-                LogHelper.e(TAG, "Failed to update app storages.", it)
+                LogHelper.e(TAG, "Failed to update apps.", it)
             }
         }
         return Result.success()

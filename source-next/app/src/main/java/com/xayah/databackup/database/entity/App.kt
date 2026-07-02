@@ -8,6 +8,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Ignore
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -111,6 +112,48 @@ data class AppStorage(
         }
 
         override fun newArray(size: Int): Array<AppStorage?> {
+            return arrayOfNulls(size)
+        }
+    }
+}
+
+data class AppParcelable(
+    var packageName: String,
+    var userId: Int,
+    @Embedded(prefix = "info_") var info: Info,
+    @Embedded(prefix = "storage_") var storage: Storage,
+    @Ignore var option: Option = Option(),
+) : Parcelable {
+    constructor(parcel: Parcel) : this(
+        packageName = parcel.readString() ?: "",
+        userId = parcel.readInt(),
+        info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            parcel.readParcelable(Info.CREATOR::class.java.classLoader, Info::class.java)
+        } else {
+            parcel.readParcelable(Info.CREATOR::class.java.classLoader)
+        } ?: Info(),
+        storage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            parcel.readParcelable(Storage.CREATOR::class.java.classLoader, Storage::class.java)
+        } else {
+            parcel.readParcelable(Storage.CREATOR::class.java.classLoader)
+        } ?: Storage(),
+    )
+
+    override fun describeContents(): Int = 0
+
+    override fun writeToParcel(dest: Parcel, flags: Int) {
+        dest.writeString(packageName)
+        dest.writeInt(userId)
+        dest.writeParcelable(info, flags)
+        dest.writeParcelable(storage, flags)
+    }
+
+    companion object CREATOR : Parcelable.Creator<AppParcelable> {
+        override fun createFromParcel(parcel: Parcel): AppParcelable {
+            return AppParcelable(parcel)
+        }
+
+        override fun newArray(size: Int): Array<AppParcelable?> {
             return arrayOfNulls(size)
         }
     }

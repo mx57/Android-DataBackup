@@ -13,3 +13,7 @@
 ## 2025-06-01 - [Thread Safety & UI Processing]
 **Инсайт:** Reactive flows in ViewModels performing O(N) operations (filtering, sorting lists of installed apps) were running on the Main thread by default, leading to potential frame drops during UI updates. Additionally, redundant nested coroutine scopes in Composables hindered efficient task cancellation.
 **Действие:** Applied `flowOn(Dispatchers.Default)` to all performance-critical flows in ViewModels. Refactored UI-only state (Select All checkbox) into reactive ViewModel properties. Eliminated redundant `scope.launch` inside `LaunchedEffect` to ensure proper resource management and faster UI response.
+
+## 2026-07-02 - [Consolidated App Sync & IPC Reliability]
+**Инсайт:** Sequential IPC calls to fetch app metadata and storage stats resulted in redundant package iterations and increased binder overhead. Additionally, the root service binding logic could hang if called when the service was already connected.
+**Действие:** Implemented a consolidated 'getInstalledApps' AIDL method and updated 'RemoteRootService' to fetch all data in a single pass. Fixed the suspension hang in 'bindService' by ensuring 'continuation.resume' is called for already connected services. Added directory existence checks before calling native size calculation to improve robustness.

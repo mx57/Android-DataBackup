@@ -17,6 +17,7 @@ import android.os.UserManagerHidden
 import com.topjohnwu.superuser.ipc.RootService
 import com.xayah.databackup.App
 import com.xayah.databackup.database.entity.AppInfo
+import com.xayah.databackup.database.entity.AppParcelable
 import com.xayah.databackup.database.entity.AppStorage
 import com.xayah.databackup.database.entity.Info
 import com.xayah.databackup.database.entity.Storage
@@ -128,13 +129,18 @@ object RemoteRootService {
                 users.forEach { user ->
                     storages.addAll(mPackageManagerHidden.getInstalledPackagesAsUser(0, user.id).map {
                         val apkBytes = runCatching {
-                            it.applicationInfo?.sourceDir?.let { path -> File(path).parent }?.let { path -> NativeLib.calculateTreeSize(path) }
+                            it.applicationInfo?.sourceDir?.let { path -> File(path).parent }?.takeIf { path -> File(path).exists() }?.let { path -> NativeLib.calculateTreeSize(path) }
                         }.getOrNull() ?: 0
-                        val userBytes = NativeLib.calculateTreeSize(PathHelper.getAppUserDir(user.id, it.packageName))
-                        val userDeBytes = NativeLib.calculateTreeSize(PathHelper.getAppUserDeDir(user.id, it.packageName))
-                        val dataBytes = NativeLib.calculateTreeSize(PathHelper.getAppDataDir(user.id, it.packageName))
-                        val obbBytes = NativeLib.calculateTreeSize(PathHelper.getAppObbDir(user.id, it.packageName))
-                        val mediaBytes = NativeLib.calculateTreeSize(PathHelper.getAppMediaDir(user.id, it.packageName))
+                        val userDir = PathHelper.getAppUserDir(user.id, it.packageName)
+                        val userBytes = if (File(userDir).exists()) NativeLib.calculateTreeSize(userDir) else 0L
+                        val userDeDir = PathHelper.getAppUserDeDir(user.id, it.packageName)
+                        val userDeBytes = if (File(userDeDir).exists()) NativeLib.calculateTreeSize(userDeDir) else 0L
+                        val dataDir = PathHelper.getAppDataDir(user.id, it.packageName)
+                        val dataBytes = if (File(dataDir).exists()) NativeLib.calculateTreeSize(dataDir) else 0L
+                        val obbDir = PathHelper.getAppObbDir(user.id, it.packageName)
+                        val obbBytes = if (File(obbDir).exists()) NativeLib.calculateTreeSize(obbDir) else 0L
+                        val mediaDir = PathHelper.getAppMediaDir(user.id, it.packageName)
+                        val mediaBytes = if (File(mediaDir).exists()) NativeLib.calculateTreeSize(mediaDir) else 0L
                         AppStorage(
                             packageName = it.packageName,
                             userId = user.id,
@@ -148,6 +154,54 @@ object RemoteRootService {
                     })
                 }
                 parcel.writeTypedList(storages)
+            }
+        }
+
+        override fun getInstalledApps(): ParcelFileDescriptor {
+            return writeToParcel(context) { parcel ->
+                val apps = mutableListOf<AppParcelable>()
+                val users = mUserManager.users
+                users.forEach { user ->
+                    apps.addAll(mPackageManagerHidden.getInstalledPackagesAsUser(0, user.id).map {
+                        val apkBytes = runCatching {
+                            it.applicationInfo?.sourceDir?.let { path -> File(path).parent }?.takeIf { path -> File(path).exists() }?.let { path -> NativeLib.calculateTreeSize(path) }
+                        }.getOrNull() ?: 0
+                        val userDir = PathHelper.getAppUserDir(user.id, it.packageName)
+                        val userBytes = if (File(userDir).exists()) NativeLib.calculateTreeSize(userDir) else 0L
+                        val userDeDir = PathHelper.getAppUserDeDir(user.id, it.packageName)
+                        val userDeBytes = if (File(userDeDir).exists()) NativeLib.calculateTreeSize(userDeDir) else 0L
+                        val dataDir = PathHelper.getAppDataDir(user.id, it.packageName)
+                        val dataBytes = if (File(dataDir).exists()) NativeLib.calculateTreeSize(dataDir) else 0L
+                        val obbDir = PathHelper.getAppObbDir(user.id, it.packageName)
+                        val obbBytes = if (File(obbDir).exists()) NativeLib.calculateTreeSize(obbDir) else 0L
+                        val mediaDir = PathHelper.getAppMediaDir(user.id, it.packageName)
+                        val mediaBytes = if (File(mediaDir).exists()) NativeLib.calculateTreeSize(mediaDir) else 0L
+                        AppParcelable(
+                            packageName = it.packageName,
+                            userId = user.id,
+                            info = Info(
+                                uid = it.applicationInfo?.uid ?: 0,
+                                label = it.applicationInfo?.loadLabel(mPackageManager).toString(),
+                                versionName = it.versionName ?: "",
+                                versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    it.longVersionCode
+                                } else {
+                                    it.versionCode.toLong()
+                                },
+                                flags = it.applicationInfo?.flags ?: 0,
+                                firstInstallTime = it.firstInstallTime,
+                                lastUpdateTime = it.lastUpdateTime
+                            ),
+                            storage = Storage(
+                                apkBytes = apkBytes,
+                                internalDataBytes = userBytes + userDeBytes,
+                                externalDataBytes = dataBytes,
+                                obbAndMediaBytes = obbBytes + mediaBytes,
+                            )
+                        )
+                    })
+                }
+                parcel.writeTypedList(apps)
             }
         }
 
@@ -209,7 +263,7 @@ object RemoteRootService {
                     mConnection = connection
                 } else {
                     mRetries = 0
-                    mService
+                    continuation.resume(mService!!)
                 }
             }
         }
@@ -260,6 +314,16 @@ object RemoteRootService {
             }
         }
         return storages
+    }
+
+    suspend fun getInstalledApps(): List<AppParcelable> {
+        val apps = mutableListOf<AppParcelable>()
+        getService()?.installedApps?.also { pfd ->
+            readFromParcel(pfd) {
+                it.readTypedList(apps, AppParcelable.CREATOR)
+            }
+        }
+        return apps
     }
 
     suspend fun getUsers(): List<UserInfo> {
