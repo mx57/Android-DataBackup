@@ -22,13 +22,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -82,6 +85,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackupAppsScreen(
     navController: NavHostController,
@@ -90,6 +94,7 @@ fun BackupAppsScreen(
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val apps by viewModel.apps.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val selectAllState by viewModel.selectAllState.collectAsStateWithLifecycle()
     val stats by viewModel.statistics.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -185,12 +190,21 @@ fun BackupAppsScreen(
             )
         },
     ) { innerPadding ->
-        Column(modifier = Modifier) {
-            Spacer(modifier = Modifier.size(innerPadding.calculateTopPadding()))
-
+        PullToRefreshBox(
+            modifier = Modifier
+                .padding(top = innerPadding.calculateTopPadding())
+                .fillMaxSize(),
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refreshApps() }
+        ) {
             AnimatedContent(targetState = apps.isEmpty()) { isAppsEmpty ->
                 if (isAppsEmpty) {
-                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Image(
                             modifier = Modifier.size(300.dp),
                             imageVector = ImageVector.vectorResource(R.drawable.img_empty),
@@ -205,7 +219,7 @@ fun BackupAppsScreen(
                         )
                     }
                 } else {
-                    LazyColumn(state = lazyListState) {
+                    LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
                         items(items = apps, key = { it.pkgUserKey }) { app ->
                             AppListItem(
                                 modifier = Modifier.animateItem(),
