@@ -17,3 +17,7 @@
 ## 2026-07-02 - [Consolidated App Sync & IPC Reliability]
 **Инсайт:** Sequential IPC calls to fetch app metadata and storage stats resulted in redundant package iterations and increased binder overhead. Additionally, the root service binding logic could hang if called when the service was already connected.
 **Действие:** Implemented a consolidated 'getInstalledApps' AIDL method and updated 'RemoteRootService' to fetch all data in a single pass. Fixed the suspension hang in 'bindService' by ensuring 'continuation.resume' is called for already connected services. Added directory existence checks before calling native size calculation to improve robustness.
+
+## 2026-07-03 - [Pull-to-Refresh & Empty States]
+**Инсайт:** Implementing `PullToRefreshBox` in Compose requires specific imports (`androidx.compose.material3.pulltorefresh.PullToRefreshBox`) and the `@ExperimentalMaterial3Api` annotation. Furthermore, the pull-to-refresh gesture won't trigger if the content (like an empty list placeholder) is not explicitly scrollable.
+**Действие:** Added `verticalScroll` with a `rememberScrollState()` to the empty state Column in `BackupAppsScreen` to ensure it captures swipe gestures for refreshing. Verified that `PullToRefreshBox` correctly encapsulates the `AnimatedContent` for smooth transitions between empty and populated states.

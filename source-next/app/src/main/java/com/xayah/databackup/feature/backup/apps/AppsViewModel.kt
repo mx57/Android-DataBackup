@@ -22,6 +22,8 @@ import com.xayah.databackup.util.filter
 import com.xayah.databackup.util.readBoolean
 import com.xayah.databackup.util.readEnum
 import com.xayah.databackup.util.readInt
+import com.xayah.databackup.rootservice.RemoteRootService
+import com.xayah.databackup.util.LogHelper
 import com.xayah.databackup.util.saveBoolean
 import com.xayah.databackup.util.saveEnum
 import com.xayah.databackup.util.saveInt
@@ -30,6 +32,7 @@ import com.xayah.databackup.util.sortByDataSize
 import com.xayah.databackup.util.sortByInstallTime
 import com.xayah.databackup.util.sortByUpdateTime
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +48,9 @@ data class UiState(
 open class AppsViewModel : BaseViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     val apps = combine(
         DatabaseHelper.appDao.loadFlowApps(),
@@ -204,6 +210,19 @@ open class AppsViewModel : BaseViewModel() {
                 ToggleableState.Indeterminate -> true
             }
             DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
+        }
+    }
+
+    fun refreshApps() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            runCatching {
+                val apps = RemoteRootService.getInstalledApps()
+                DatabaseHelper.appDao.upsertParcelable(apps)
+            }.onFailure {
+                LogHelper.e("AppsViewModel", "Failed to refresh apps.", it)
+            }
+            _isRefreshing.value = false
         }
     }
 }
