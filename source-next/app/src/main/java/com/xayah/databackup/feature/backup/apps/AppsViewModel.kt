@@ -218,6 +218,11 @@ open class AppsViewModel : BaseViewModel() {
             _isRefreshing.value = true
             runCatching {
                 val apps = RemoteRootService.getInstalledApps()
+                val groupedApps = apps.groupBy { it.userId }
+                groupedApps.forEach { (userId, userApps) ->
+                    val packageNames = userApps.map { it.packageName }
+                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                }
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
                 LogHelper.e("AppsViewModel", "Failed to refresh apps.", it)

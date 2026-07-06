@@ -21,3 +21,7 @@
 ## 2026-07-03 - [Pull-to-Refresh & Empty States]
 **Инсайт:** Implementing `PullToRefreshBox` in Compose requires specific imports (`androidx.compose.material3.pulltorefresh.PullToRefreshBox`) and the `@ExperimentalMaterial3Api` annotation. Furthermore, the pull-to-refresh gesture won't trigger if the content (like an empty list placeholder) is not explicitly scrollable.
 **Действие:** Added `verticalScroll` with a `rememberScrollState()` to the empty state Column in `BackupAppsScreen` to ensure it captures swipe gestures for refreshing. Verified that `PullToRefreshBox` correctly encapsulates the `AnimatedContent` for smooth transitions between empty and populated states.
+
+## 2026-07-04 - [Resource Safety & DB Synchronization]
+**Инсайт:** In IPC operations involving 'ParcelFileDescriptor', failing to explicitly close the descriptor and its associated streams can lead to file descriptor leaks. Additionally, a simple "upsert" strategy for app list synchronization leaves records for uninstalled apps in the database.
+**Действие:** Wrapped 'ParcelFileDescriptor' and 'AutoCloseInputStream' in '.use' blocks in 'RemoteRootService.kt'. Implemented 'deleteExcept' in 'AppDao' and updated 'AppsViewModel' and 'AppsUpdateWorker' to prune the database of uninstalled apps by package name and user ID during synchronization. Refined search bar UX to prioritize clearing text over closing the bar.

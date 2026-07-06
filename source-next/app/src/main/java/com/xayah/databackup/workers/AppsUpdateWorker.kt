@@ -31,6 +31,11 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
         withContext(Dispatchers.Default) {
             runCatching {
                 val apps = RemoteRootService.getInstalledApps()
+                val groupedApps = apps.groupBy { it.userId }
+                groupedApps.forEach { (userId, userApps) ->
+                    val packageNames = userApps.map { it.packageName }
+                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                }
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
                 LogHelper.e(TAG, "Failed to update apps.", it)

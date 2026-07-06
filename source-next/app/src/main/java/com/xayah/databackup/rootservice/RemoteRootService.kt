@@ -56,13 +56,16 @@ object RemoteRootService {
     }
 
     private fun readFromParcel(pfd: ParcelFileDescriptor, block: (Parcel) -> Unit) = run {
-        val stream = ParcelFileDescriptor.AutoCloseInputStream(pfd)
-        val bytes = stream.readBytes()
-        val parcel = Parcel.obtain()
-        parcel.unmarshall(bytes, 0, bytes.size)
-        parcel.setDataPosition(0)
-        block(parcel)
-        parcel.recycle()
+        pfd.use {
+            ParcelFileDescriptor.AutoCloseInputStream(it).use { stream ->
+                val bytes = stream.readBytes()
+                val parcel = Parcel.obtain()
+                parcel.unmarshall(bytes, 0, bytes.size)
+                parcel.setDataPosition(0)
+                block(parcel)
+                parcel.recycle()
+            }
+        }
     }
 
     private var mMutex = Mutex()

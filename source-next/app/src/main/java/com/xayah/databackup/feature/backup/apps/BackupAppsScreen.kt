@@ -122,8 +122,11 @@ fun BackupAppsScreen(
                             singleLine = true,
                             trailingIcon = {
                                 IconButton(onClick = {
-                                    viewModel.setSearchQuery("")
-                                    showSearchBar = false
+                                    if (uiState.searchQuery.isNotEmpty()) {
+                                        viewModel.setSearchQuery("")
+                                    } else {
+                                        showSearchBar = false
+                                    }
                                 }) {
                                     Icon(
                                         imageVector = ImageVector.vectorResource(R.drawable.ic_circle_x),

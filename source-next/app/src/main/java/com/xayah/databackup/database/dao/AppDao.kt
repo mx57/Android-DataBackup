@@ -43,4 +43,10 @@ interface AppDao {
 
     @Query("UPDATE apps SET option_apk = :selected, option_internalData = :selected, option_externalData = :selected, option_obbAndMedia = :selected WHERE packageName IN (:packageNames) AND userId = :userId")
     suspend fun selectAll(packageNames: List<String>, userId: Int, selected: Boolean)
+
+    @Query("DELETE FROM apps WHERE packageName = :packageName AND userId = :userId")
+    suspend fun delete(packageName: String, userId: Int)
+
+    @Query("DELETE FROM apps WHERE packageName NOT IN (:packageNames) AND userId = :userId")
+    suspend fun deleteExcept(packageNames: List<String>, userId: Int)
 }
