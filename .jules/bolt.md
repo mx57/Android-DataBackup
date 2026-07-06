@@ -25,3 +25,7 @@
 ## 2026-07-04 - [Resource Safety & DB Synchronization]
 **Инсайт:** In IPC operations involving 'ParcelFileDescriptor', failing to explicitly close the descriptor and its associated streams can lead to file descriptor leaks. Additionally, a simple "upsert" strategy for app list synchronization leaves records for uninstalled apps in the database.
 **Действие:** Wrapped 'ParcelFileDescriptor' and 'AutoCloseInputStream' in '.use' blocks in 'RemoteRootService.kt'. Implemented 'deleteExcept' in 'AppDao' and updated 'AppsViewModel' and 'AppsUpdateWorker' to prune the database of uninstalled apps by package name and user ID during synchronization. Refined search bar UX to prioritize clearing text over closing the bar.
+
+## 2026-07-06 - [Dashboard UX & Localization Consistency]
+**Инсайт:** Placeholder actions on the Dashboard that remain silent upon interaction lead to poor user feedback. Additionally, hardcoded labels in reusable UI components like 'StorageCard' break localization support and consistency.
+**Действие:** Implemented a Snackbar-based 'showComingSoon()' feedback mechanism for all placeholder dashboard actions. Refactored 'StorageCard' to accept dynamic string parameters for storage legend labels, ensuring full localization. Integrated Material 3 'PullToRefreshBox' on the Dashboard, backed by a new 'isRefreshing' state in 'DashboardViewModel'.

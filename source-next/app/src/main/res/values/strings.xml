@@ -438,4 +438,15 @@
     <string name="networks">Networks</string>
     <string name="call_logs">Call logs</string>
     <string name="list_is_empty">List is empty</string>
+    <string name="dashboard_actions">Actions</string>
+    <string name="dashboard_backup_desc">Backup your data</string>
+    <string name="dashboard_restore_desc">Restore your data</string>
+    <string name="dashboard_history_desc">See your previous backups</string>
+    <string name="dashboard_cloud_desc">Set-up cloud storage</string>
+    <string name="schedule">Schedule</string>
+    <string name="dashboard_schedule_desc">Configure automatic backups</string>
+    <string name="feature_coming_soon">Feature coming soon</string>
+    <string name="storage_backups">Backups</string>
+    <string name="storage_other">Other</string>
+    <string name="storage_free">Free</string>
 </resources>
