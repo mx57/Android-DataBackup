@@ -30,6 +30,9 @@ class DashboardViewModel : BaseViewModel() {
     private val _storageStats = MutableStateFlow(StorageStats())
     val storageStats: StateFlow<StorageStats> = _storageStats.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         viewModelScope.launch {
             App.application.readString(BackupDir).collectLatest { backupDir ->
@@ -62,8 +65,10 @@ class DashboardViewModel : BaseViewModel() {
 
     fun refreshStorageStats() {
         viewModelScope.launch {
+            _isRefreshing.value = true
             val backupDir = App.application.readString(BackupDir).first()
             updateStats(backupDir)
+            _isRefreshing.value = false
         }
     }
 }
