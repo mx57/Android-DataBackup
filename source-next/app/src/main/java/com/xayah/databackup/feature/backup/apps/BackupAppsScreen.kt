@@ -46,7 +46,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -103,7 +104,15 @@ fun BackupAppsScreen(
     val filterSheetState = rememberModalBottomSheetState()
     var showFilterSheet by remember { mutableStateOf(false) }
     var showSearchBar by remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
     val lazyListState = rememberLazyListState()
+
+    LaunchedEffect(showSearchBar) {
+        if (showSearchBar) {
+            searchFocusRequester.requestFocus()
+        }
+    }
+
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -115,7 +124,8 @@ fun BackupAppsScreen(
                         OutlinedTextField(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(end = 16.dp),
+                                .padding(end = 16.dp)
+                                .focusRequester(searchFocusRequester),
                             value = uiState.searchQuery,
                             onValueChange = { viewModel.setSearchQuery(it) },
                             placeholder = { Text(text = stringResource(R.string.search)) },
@@ -167,14 +177,12 @@ fun BackupAppsScreen(
                     }
                 },
                 actions = {
-                    if (showSearchBar.not()) {
-                        TriStateCheckbox(
-                            state = selectAllState,
-                            onClick = {
-                                viewModel.selectAllFiltered(filterUser, selectAllState)
-                            }
-                        )
-                    }
+                    TriStateCheckbox(
+                        state = selectAllState,
+                        onClick = {
+                            viewModel.selectAllFiltered(filterUser, selectAllState)
+                        }
+                    )
 
                     IconButton(onClick = { showFilterSheet = true }) {
                         Icon(
@@ -182,7 +190,12 @@ fun BackupAppsScreen(
                             contentDescription = stringResource(R.string.filters)
                         )
                     }
-                    IconButton(onClick = { showSearchBar = showSearchBar.not() }) {
+                    IconButton(onClick = {
+                        if (showSearchBar) {
+                            viewModel.setSearchQuery("")
+                        }
+                        showSearchBar = showSearchBar.not()
+                    }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_search),
                             contentDescription = stringResource(R.string.search)
