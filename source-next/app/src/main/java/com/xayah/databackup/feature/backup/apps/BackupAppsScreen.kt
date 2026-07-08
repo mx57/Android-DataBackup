@@ -421,6 +421,44 @@ fun BackupAppsScreen(
                         }
                         Spacer(modifier = Modifier.size(0.dp))
                     }
+
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 12.dp)
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(start = 24.dp),
+                        text = stringResource(R.string.dashboard_actions),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    val actionsScrollState = rememberScrollState()
+                    Row(
+                        modifier = Modifier
+                            .padding(vertical = 24.dp)
+                            .horizontalScroll(actionsScrollState)
+                            .horizontalFadingEdges(actionsScrollState),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        Spacer(modifier = Modifier.size(0.dp))
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.reverse_selection),
+                            icon = ImageVector.vectorResource(R.drawable.ic_hash)
+                        ) {
+                            viewModel.reverseSelectionFiltered(filterUser)
+                        }
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.unselect_all),
+                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x)
+                        ) {
+                            viewModel.selectAllFiltered(filterUser, ToggleableState.On)
+                        }
+                        Spacer(modifier = Modifier.size(0.dp))
+                    }
                 }
             }
         }
