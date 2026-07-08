@@ -29,3 +29,11 @@
 ## 2026-07-06 - [Dashboard UX & Localization Consistency]
 **Инсайт:** Placeholder actions on the Dashboard that remain silent upon interaction lead to poor user feedback. Additionally, hardcoded labels in reusable UI components like 'StorageCard' break localization support and consistency.
 **Действие:** Implemented a Snackbar-based 'showComingSoon()' feedback mechanism for all placeholder dashboard actions. Refactored 'StorageCard' to accept dynamic string parameters for storage legend labels, ensuring full localization. Integrated Material 3 'PullToRefreshBox' on the Dashboard, backed by a new 'isRefreshing' state in 'DashboardViewModel'.
+
+## 2026-07-07 - [Mass Selection UX & ViewModel Refactoring]
+**Инсайт:** Placeholder strings for "Reverse Selection" and "Unselect All" existed in  but weren't implemented. Using a single  for both UI toggles (TriStateCheckbox) and explicit actions (Unselect All) led to logic errors where "Unselect All" would actually "Select All" depending on the tri-state mapping.
+**Действие:** Implemented  in  using SQL . Refactored  to separate  (for tri-state logic) from explicit . Added an "Actions" section to the  filter sheet to house these mass-selection features.
+
+## 2026-07-07 - [Mass Selection UX & ViewModel Refactoring]
+**Инсайт:** Placeholder strings for "Reverse Selection" and "Unselect All" existed in `strings.xml` but weren't implemented. Using a single `selectAllFiltered(userId, toggleableState)` for both UI toggles (TriStateCheckbox) and explicit actions (Unselect All) led to logic errors where "Unselect All" would actually "Select All" depending on the tri-state mapping.
+**Действие:** Implemented `reverseSelection` in `AppDao` using SQL `NOT`. Refactored `AppsViewModel` to separate `toggleSelectAllFiltered` (for tri-state logic) from explicit `selectAllFiltered(userId, selected: Boolean)`. Added an "Actions" section to the `BackupAppsScreen` filter sheet to house these mass-selection features.
