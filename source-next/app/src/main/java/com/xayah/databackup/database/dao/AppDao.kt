@@ -44,6 +44,12 @@ interface AppDao {
     @Query("UPDATE apps SET option_apk = :selected, option_internalData = :selected, option_externalData = :selected, option_obbAndMedia = :selected WHERE packageName IN (:packageNames) AND userId = :userId")
     suspend fun selectAll(packageNames: List<String>, userId: Int, selected: Boolean)
 
+    /**
+     * Inverts the selection state of all backup options for the specified apps.
+     */
+    @Query("UPDATE apps SET option_apk = NOT option_apk, option_internalData = NOT option_internalData, option_externalData = NOT option_externalData, option_obbAndMedia = NOT option_obbAndMedia WHERE packageName IN (:packageNames) AND userId = :userId")
+    suspend fun reverseSelection(packageNames: List<String>, userId: Int)
+
     @Query("DELETE FROM apps WHERE packageName = :packageName AND userId = :userId")
     suspend fun delete(packageName: String, userId: Int)
 

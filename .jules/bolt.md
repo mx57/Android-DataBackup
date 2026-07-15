@@ -29,3 +29,7 @@
 ## 2026-07-06 - [Dashboard UX & Localization Consistency]
 **Инсайт:** Placeholder actions on the Dashboard that remain silent upon interaction lead to poor user feedback. Additionally, hardcoded labels in reusable UI components like 'StorageCard' break localization support and consistency.
 **Действие:** Implemented a Snackbar-based 'showComingSoon()' feedback mechanism for all placeholder dashboard actions. Refactored 'StorageCard' to accept dynamic string parameters for storage legend labels, ensuring full localization. Integrated Material 3 'PullToRefreshBox' on the Dashboard, backed by a new 'isRefreshing' state in 'DashboardViewModel'.
+
+## 2026-07-07 - [Filtered Mass Selection Logic]
+**Инсайт:** When implementing mass selection (Select All, Reverse Selection) in a screen with filters and search, it is critical to perform actions only on the *filtered* list of items to respect the user's current view. Performing these actions at the DAO level using a list of IDs/package names from the current UI state is more efficient than individual updates.
+**Действие:** Implemented `selectAllFiltered` and `reverseSelectionFiltered` in `AppsViewModel` that operate on the `apps.value` (the reactive filtered list). Added `reverseSelection` to `AppDao` using a batch `UPDATE` with SQL `NOT` for atomic toggling of multiple boolean flags.
