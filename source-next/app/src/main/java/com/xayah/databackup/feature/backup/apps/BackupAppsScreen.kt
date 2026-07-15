@@ -310,6 +310,8 @@ fun BackupAppsScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    // Mass selection actions for the currently filtered/searched list.
                     val sortsScrollState = rememberScrollState()
 
                     Row(modifier = Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
@@ -418,6 +420,55 @@ fun BackupAppsScreen(
                             if (filtersSystemApps.not() || filtersUserApps) {
                                 viewModel.changeFilter(KeyFiltersSystemAppsBackup, filtersSystemApps.not())
                             }
+                        }
+                        Spacer(modifier = Modifier.size(0.dp))
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 12.dp)
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(start = 24.dp),
+                        text = stringResource(R.string.dashboard_actions),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    // Mass selection actions for the currently filtered/searched list.
+                    val actionsScrollState = rememberScrollState()
+                    Row(
+                        modifier = Modifier
+                            .padding(vertical = 24.dp)
+                            .horizontalScroll(actionsScrollState)
+                            .horizontalFadingEdges(actionsScrollState),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        Spacer(modifier = Modifier.size(0.dp))
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.select_all),
+                            colors = filterButtonSecondaryColors(),
+                            icon = ImageVector.vectorResource(R.drawable.ic_check)
+                        ) {
+                            viewModel.selectAllFiltered(filterUser, true)
+                        }
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.unselect_all),
+                            colors = filterButtonSecondaryColors(),
+                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x)
+                        ) {
+                            viewModel.selectAllFiltered(filterUser, false)
+                        }
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.reverse_selection),
+                            colors = filterButtonSecondaryColors(),
+                            icon = ImageVector.vectorResource(R.drawable.ic_layout_grid)
+                        ) {
+                            viewModel.reverseSelectionFiltered(filterUser)
                         }
                         Spacer(modifier = Modifier.size(0.dp))
                     }
