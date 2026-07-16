@@ -213,6 +213,28 @@ open class AppsViewModel : BaseViewModel() {
         }
     }
 
+    /**
+     * Updates the selection state for all currently filtered apps.
+     */
+    fun selectAllFiltered(userId: Int, selected: Boolean) {
+        val packageNames = apps.value.map { it.packageName }
+        if (packageNames.isEmpty()) return
+        withLock(Dispatchers.IO) {
+            DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
+        }
+    }
+
+    /**
+     * Inverts the selection state for all currently filtered apps.
+     */
+    fun reverseSelectionFiltered(userId: Int) {
+        val packageNames = apps.value.map { it.packageName }
+        if (packageNames.isEmpty()) return
+        withLock(Dispatchers.IO) {
+            DatabaseHelper.appDao.reverseSelection(packageNames, userId)
+        }
+    }
+
     fun refreshApps() {
         viewModelScope.launch {
             _isRefreshing.value = true
