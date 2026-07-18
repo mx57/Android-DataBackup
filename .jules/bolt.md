@@ -10,7 +10,7 @@
 **Инсайт:** The `BackupPreviewScreen` used hardcoded selection states, creating a "dead end" UI. Managing mass selection across multiple users requires grouping package names by `userId` to use optimized DAO `IN (:packageNames)` queries effectively.
 **Действие:** Enhanced `SelectableActionButton` to be state-aware. Updated `BackupViewModel` to handle multi-user mass selection by grouping apps before database updates. Synchronized the "Next" button state with the reactive `isAnySelected` property in `Statistics`.
 
-## 2025-06-01 - [Thread Safety & UI Processing]
+## 2026-07-01 - [Thread Safety & UI Processing]
 **Инсайт:** Reactive flows in ViewModels performing O(N) operations (filtering, sorting lists of installed apps) were running on the Main thread by default, leading to potential frame drops during UI updates. Additionally, redundant nested coroutine scopes in Composables hindered efficient task cancellation.
 **Действие:** Applied `flowOn(Dispatchers.Default)` to all performance-critical flows in ViewModels. Refactored UI-only state (Select All checkbox) into reactive ViewModel properties. Eliminated redundant `scope.launch` inside `LaunchedEffect` to ensure proper resource management and faster UI response.
 
@@ -29,3 +29,7 @@
 ## 2026-07-06 - [Dashboard UX & Localization Consistency]
 **Инсайт:** Placeholder actions on the Dashboard that remain silent upon interaction lead to poor user feedback. Additionally, hardcoded labels in reusable UI components like 'StorageCard' break localization support and consistency.
 **Действие:** Implemented a Snackbar-based 'showComingSoon()' feedback mechanism for all placeholder dashboard actions. Refactored 'StorageCard' to accept dynamic string parameters for storage legend labels, ensuring full localization. Integrated Material 3 'PullToRefreshBox' on the Dashboard, backed by a new 'isRefreshing' state in 'DashboardViewModel'.
+
+## 2026-07-07 - [Filtered Mass Selection Logic]
+**Инсайт:** When implementing mass selection (Select All, Unselect All, Reverse Selection) in a screen with filters and search, performing selection operations on the entire list of apps disregards the user's filtered view. Operating directly on the filtered list of package names retrieved from the UI's reactive StateFlow and performing atomic SQLite batch updates (`UPDATE ... WHERE packageName IN (:packageNames)`) prevents inconsistent UI states and O(N) iteration overhead.
+**Действие:** Implemented an optimized `reverseSelection` query in `AppDao` that inverts all selection flags concurrently. Added `selectAllFiltered` and `reverseSelectionFiltered` in `AppsViewModel` to update the DB using only package names currently in the filtered list. Integrated the "Actions" section containing Select All, Unselect All, and Reverse Selection buttons in the bottom sheet using non-persistent action styling (`selected = false`).
