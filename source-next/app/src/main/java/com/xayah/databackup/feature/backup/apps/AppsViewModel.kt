@@ -240,11 +240,32 @@ open class AppsViewModel : BaseViewModel() {
             _isRefreshing.value = true
             runCatching {
                 val apps = RemoteRootService.getInstalledApps()
-                val groupedApps = apps.groupBy { it.userId }
-                groupedApps.forEach { (userId, userApps) ->
-                    val packageNames = userApps.map { it.packageName }
-                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                val users = RemoteRootService.getUsers()
+                val activeUserIds = users.map { it.id }.toSet()
+
+                if (activeUserIds.isNotEmpty()) {
+                    // 1. Delete apps for any user IDs currently in the database but no longer active on the system
+                    val dbUserIds = DatabaseHelper.appDao.getDistinctUserIds()
+                    dbUserIds.forEach { dbUserId ->
+                        if (dbUserId !in activeUserIds) {
+                            DatabaseHelper.appDao.deleteByUserId(dbUserId)
+                        }
+                    }
+
+                    // 2. For active users, group apps and delete uninstalled apps
+                    val groupedApps = apps.groupBy { it.userId }
+                    activeUserIds.forEach { userId ->
+                        val userApps = groupedApps[userId] ?: emptyList()
+                        val packageNames = userApps.map { it.packageName }
+                        if (packageNames.isEmpty()) {
+                            DatabaseHelper.appDao.deleteByUserId(userId)
+                        } else {
+                            DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                        }
+                    }
                 }
+
+                // 3. Upsert the updated apps
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
                 LogHelper.e("AppsViewModel", "Failed to refresh apps.", it)
