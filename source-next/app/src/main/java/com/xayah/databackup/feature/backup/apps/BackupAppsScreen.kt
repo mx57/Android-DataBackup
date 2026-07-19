@@ -58,6 +58,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -111,6 +112,11 @@ fun BackupAppsScreen(
         if (showSearchBar) {
             searchFocusRequester.requestFocus()
         }
+    }
+
+    BackHandler(enabled = showSearchBar) {
+        viewModel.setSearchQuery("")
+        showSearchBar = false
     }
 
     Scaffold(
@@ -169,7 +175,14 @@ fun BackupAppsScreen(
 
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStackSafely() }) {
+                    IconButton(onClick = {
+                        if (showSearchBar) {
+                            viewModel.setSearchQuery("")
+                            showSearchBar = false
+                        } else {
+                            navController.popBackStackSafely()
+                        }
+                    }) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_left),
                             contentDescription = stringResource(R.string.back)
