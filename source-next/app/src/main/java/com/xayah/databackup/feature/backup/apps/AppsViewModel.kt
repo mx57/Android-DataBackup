@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -239,11 +240,27 @@ open class AppsViewModel : BaseViewModel() {
         viewModelScope.launch {
             _isRefreshing.value = true
             runCatching {
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Get user IDs from local DB and delete inactive users
+                val localApps = DatabaseHelper.appDao.loadFlowApps().first()
+                val localUserIds = localApps.map { it.userId }.toSet()
+                val inactiveUserIds = localUserIds - activeUserIds
+                inactiveUserIds.forEach { userId ->
+                    DatabaseHelper.appDao.deleteByUserId(userId)
+                }
+
                 val apps = RemoteRootService.getInstalledApps()
                 val groupedApps = apps.groupBy { it.userId }
-                groupedApps.forEach { (userId, userApps) ->
+                activeUserIds.forEach { userId ->
+                    val userApps = groupedApps[userId] ?: emptyList()
                     val packageNames = userApps.map { it.packageName }
-                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                    if (packageNames.isEmpty()) {
+                        DatabaseHelper.appDao.deleteByUserId(userId)
+                    } else {
+                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                    }
                 }
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
