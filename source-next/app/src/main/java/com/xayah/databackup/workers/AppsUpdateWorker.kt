@@ -13,6 +13,7 @@ import com.xayah.databackup.util.DatabaseHelper
 import com.xayah.databackup.util.LogHelper
 import com.xayah.databackup.util.NotificationHelper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : CoroutineWorker(appContext, workerParams) {
@@ -30,11 +31,27 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
         setForeground(getForegroundInfo())
         withContext(Dispatchers.Default) {
             runCatching {
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Get user IDs from local DB and delete inactive users
+                val localApps = DatabaseHelper.appDao.loadFlowApps().first()
+                val localUserIds = localApps.map { it.userId }.toSet()
+                val inactiveUserIds = localUserIds - activeUserIds
+                inactiveUserIds.forEach { userId ->
+                    DatabaseHelper.appDao.deleteByUserId(userId)
+                }
+
                 val apps = RemoteRootService.getInstalledApps()
                 val groupedApps = apps.groupBy { it.userId }
-                groupedApps.forEach { (userId, userApps) ->
+                activeUserIds.forEach { userId ->
+                    val userApps = groupedApps[userId] ?: emptyList()
                     val packageNames = userApps.map { it.packageName }
-                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                    if (packageNames.isEmpty()) {
+                        DatabaseHelper.appDao.deleteByUserId(userId)
+                    } else {
+                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                    }
                 }
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
