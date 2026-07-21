@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -240,11 +241,26 @@ open class AppsViewModel : BaseViewModel() {
             _isRefreshing.value = true
             runCatching {
                 val apps = RemoteRootService.getInstalledApps()
-                val groupedApps = apps.groupBy { it.userId }
-                groupedApps.forEach { (userId, userApps) ->
-                    val packageNames = userApps.map { it.packageName }
-                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Clean up inactive users' databases
+                if (activeUserIds.isNotEmpty()) {
+                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds.toList())
                 }
+
+                // Clean up active users' databases
+                val groupedApps = apps.groupBy { it.userId }
+                activeUserIds.forEach { userId ->
+                    val userApps = groupedApps[userId] ?: emptyList()
+                    if (userApps.isNotEmpty()) {
+                        val packageNames = userApps.map { it.packageName }
+                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                    } else {
+                        DatabaseHelper.appDao.deleteByUserId(userId)
+                    }
+                }
+
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
                 LogHelper.e("AppsViewModel", "Failed to refresh apps.", it)
