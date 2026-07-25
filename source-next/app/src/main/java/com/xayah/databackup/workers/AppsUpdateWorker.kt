@@ -30,11 +30,20 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
         setForeground(getForegroundInfo())
         withContext(Dispatchers.Default) {
             runCatching {
+                val activeUserIds = RemoteRootService.getUsers().map { it.id }
+                if (activeUserIds.isNotEmpty()) {
+                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
+                }
                 val apps = RemoteRootService.getInstalledApps()
                 val groupedApps = apps.groupBy { it.userId }
-                groupedApps.forEach { (userId, userApps) ->
-                    val packageNames = userApps.map { it.packageName }
-                    DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                activeUserIds.forEach { userId ->
+                    val userApps = groupedApps[userId] ?: listOf()
+                    if (userApps.isNotEmpty()) {
+                        val packageNames = userApps.map { it.packageName }
+                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                    } else {
+                        DatabaseHelper.appDao.deleteByUserId(userId)
+                    }
                 }
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
