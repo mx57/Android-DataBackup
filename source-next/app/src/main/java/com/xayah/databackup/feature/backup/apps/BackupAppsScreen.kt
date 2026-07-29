@@ -113,6 +113,11 @@ fun BackupAppsScreen(
         }
     }
 
+    androidx.activity.compose.BackHandler(enabled = showSearchBar) {
+        viewModel.setSearchQuery("")
+        showSearchBar = false
+    }
+
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
