@@ -56,6 +56,6 @@ interface AppDao {
     @Query("DELETE FROM apps WHERE userId = :userId")
     suspend fun deleteByUserId(userId: Int)
 
-    @Query("DELETE FROM apps WHERE userId NOT IN (:userIds)")
-    suspend fun deleteExceptUserIds(userIds: List<Int>)
+    @Query("SELECT DISTINCT userId FROM apps")
+    suspend fun getDistinctUserIds(): List<Int>
 }
