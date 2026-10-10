@@ -239,18 +239,16 @@ open class AppsViewModel : BaseViewModel() {
         viewModelScope.launch {
             _isRefreshing.value = true
             runCatching {
-                val activeUsers = RemoteRootService.getUsers()
-                val activeUserIds = activeUsers.map { it.id }
+                val activeUserIds = RemoteRootService.getUsers().map { it.id }
                 if (activeUserIds.isNotEmpty()) {
                     DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
                 }
-
                 val apps = RemoteRootService.getInstalledApps()
                 val groupedApps = apps.groupBy { it.userId }
                 activeUserIds.forEach { userId ->
-                    val userApps = groupedApps[userId] ?: emptyList()
-                    val packageNames = userApps.map { it.packageName }
-                    if (packageNames.isNotEmpty()) {
+                    val userApps = groupedApps[userId] ?: listOf()
+                    if (userApps.isNotEmpty()) {
+                        val packageNames = userApps.map { it.packageName }
                         DatabaseHelper.appDao.deleteExcept(packageNames, userId)
                     } else {
                         DatabaseHelper.appDao.deleteByUserId(userId)

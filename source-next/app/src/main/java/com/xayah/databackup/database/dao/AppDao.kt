@@ -56,8 +56,8 @@ interface AppDao {
     @Query("DELETE FROM apps WHERE packageName NOT IN (:packageNames) AND userId = :userId")
     suspend fun deleteExcept(packageNames: List<String>, userId: Int)
 
-    @Query("DELETE FROM apps WHERE userId NOT IN (:activeUserIds)")
-    suspend fun deleteExceptUserIds(activeUserIds: List<Int>)
+    @Query("DELETE FROM apps WHERE userId NOT IN (:userIds)")
+    suspend fun deleteExceptUserIds(userIds: List<Int>)
 
     @Query("DELETE FROM apps WHERE userId = :userId")
     suspend fun deleteByUserId(userId: Int)
