@@ -38,7 +38,8 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
 
                 val apps = RemoteRootService.getInstalledApps()
                 val groupedApps = apps.groupBy { it.userId }
-                groupedApps.forEach { (userId, userApps) ->
+                activeUserIds.forEach { userId ->
+                    val userApps = groupedApps[userId] ?: emptyList()
                     val packageNames = userApps.map { it.packageName }
                     if (packageNames.isNotEmpty()) {
                         DatabaseHelper.appDao.deleteExcept(packageNames, userId)
