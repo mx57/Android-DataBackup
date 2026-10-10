@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -201,21 +202,14 @@ open class AppsViewModel : BaseViewModel() {
     }
 
     fun selectAllFiltered(userId: Int, toggleableState: ToggleableState) {
-        val packageNames = apps.value.map { it.packageName }
-        if (packageNames.isEmpty()) return
-        withLock(Dispatchers.IO) {
-            val selected = when (toggleableState) {
-                ToggleableState.On -> false
-                ToggleableState.Off -> true
-                ToggleableState.Indeterminate -> true
-            }
-            DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
+        val selected = when (toggleableState) {
+            ToggleableState.On -> false
+            ToggleableState.Off -> true
+            ToggleableState.Indeterminate -> true
         }
+        selectAllFiltered(userId, selected)
     }
 
-    /**
-     * Updates the selection state for all currently filtered apps.
-     */
     fun selectAllFiltered(userId: Int, selected: Boolean) {
         val packageNames = apps.value.map { it.packageName }
         if (packageNames.isEmpty()) return
@@ -224,9 +218,6 @@ open class AppsViewModel : BaseViewModel() {
         }
     }
 
-    /**
-     * Inverts the selection state for all currently filtered apps.
-     */
     fun reverseSelectionFiltered(userId: Int) {
         val packageNames = apps.value.map { it.packageName }
         if (packageNames.isEmpty()) return
@@ -240,22 +231,51 @@ open class AppsViewModel : BaseViewModel() {
             _isRefreshing.value = true
             runCatching {
                 val activeUsers = RemoteRootService.getUsers()
-                val activeUserIds = activeUsers.map { it.id }
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Get user IDs from local DB and delete inactive users
+                val localApps = DatabaseHelper.appDao.loadFlowApps().first()
+                val localUserIds = localApps.map { it.userId }.toSet()
+                val inactiveUserIds = localUserIds - activeUserIds
+                inactiveUserIds.forEach { userId ->
+                    DatabaseHelper.appDao.deleteByUserId(userId)
+                }
+                val apps = RemoteRootService.getInstalledApps()
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Clean up inactive users' databases
                 if (activeUserIds.isNotEmpty()) {
-                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
+                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds.toList())
                 }
 
                 val apps = RemoteRootService.getInstalledApps()
-                val groupedApps = apps.groupBy { it.userId }
-                activeUserIds.forEach { userId ->
-                    val userApps = groupedApps[userId] ?: emptyList()
-                    val packageNames = userApps.map { it.packageName }
-                    if (packageNames.isNotEmpty()) {
-                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
-                    } else {
-                        DatabaseHelper.appDao.deleteByUserId(userId)
+                val users = RemoteRootService.getUsers()
+                val activeUserIds = users.map { it.id }.toSet()
+
+                if (activeUserIds.isNotEmpty()) {
+                    // 1. Delete apps for any user IDs currently in the database but no longer active on the system
+                    val dbUserIds = DatabaseHelper.appDao.getDistinctUserIds()
+                    dbUserIds.forEach { dbUserId ->
+                        if (dbUserId !in activeUserIds) {
+                            DatabaseHelper.appDao.deleteByUserId(dbUserId)
+                        }
+                    }
+
+                    // 2. For active users, group apps and delete uninstalled apps
+                    val groupedApps = apps.groupBy { it.userId }
+                    activeUserIds.forEach { userId ->
+                        val userApps = groupedApps[userId] ?: emptyList()
+                        val packageNames = userApps.map { it.packageName }
+                        if (packageNames.isEmpty()) {
+                            DatabaseHelper.appDao.deleteByUserId(userId)
+                        } else {
+                            DatabaseHelper.appDao.deleteExcept(packageNames, userId)
+                        }
                     }
                 }
+
+                // 3. Upsert the updated apps
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
                 LogHelper.e("AppsViewModel", "Failed to refresh apps.", it)
