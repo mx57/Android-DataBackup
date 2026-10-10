@@ -474,7 +474,6 @@ fun BackupAppsScreen(
                         }
                         Spacer(modifier = Modifier.size(0.dp))
                     }
-
                     HorizontalDivider(
                         modifier = Modifier
                             .padding(horizontal = 24.dp)
@@ -487,8 +486,6 @@ fun BackupAppsScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
-                    // Mass selection actions for the currently filtered/searched list.
                     val actionsScrollState = rememberScrollState()
                     Row(
                         modifier = Modifier
@@ -501,26 +498,26 @@ fun BackupAppsScreen(
                         FilterButton(
                             selected = false,
                             title = stringResource(R.string.select_all),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_check)
+                            icon = ImageVector.vectorResource(R.drawable.ic_check),
+                            colors = filterButtonSecondaryColors()
                         ) {
                             viewModel.selectAllFiltered(filterUser, true)
                         }
                         FilterButton(
                             selected = false,
-                            title = stringResource(R.string.unselect_all),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x)
+                            title = stringResource(R.string.reverse_selection),
+                            icon = ImageVector.vectorResource(R.drawable.ic_arrow_down_a_z),
+                            colors = filterButtonSecondaryColors()
                         ) {
-                            viewModel.selectAllFiltered(filterUser, false)
+                            viewModel.reverseSelectionFiltered(filterUser)
                         }
                         FilterButton(
                             selected = false,
-                            title = stringResource(R.string.reverse_selection),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_layout_grid)
+                            title = stringResource(R.string.unselect_all),
+                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x),
+                            colors = filterButtonSecondaryColors()
                         ) {
-                            viewModel.reverseSelectionFiltered(filterUser)
+                            viewModel.selectAllFiltered(filterUser, false)
                         }
                         Spacer(modifier = Modifier.size(0.dp))
                     }
