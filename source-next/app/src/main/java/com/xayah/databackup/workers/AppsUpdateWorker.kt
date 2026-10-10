@@ -41,8 +41,16 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
                 inactiveUserIds.forEach { userId ->
                     DatabaseHelper.appDao.deleteByUserId(userId)
                 }
-
                 val apps = RemoteRootService.getInstalledApps()
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Clean up inactive users' databases
+                if (activeUserIds.isNotEmpty()) {
+                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds.toList())
+                }
+
+                // Clean up active users' databases
                 val groupedApps = apps.groupBy { it.userId }
                 activeUserIds.forEach { userId ->
                     val userApps = groupedApps[userId] ?: emptyList()
@@ -53,6 +61,7 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
                         DatabaseHelper.appDao.deleteExcept(packageNames, userId)
                     }
                 }
+
                 DatabaseHelper.appDao.upsertParcelable(apps)
             }.onFailure {
                 LogHelper.e(TAG, "Failed to update apps.", it)
