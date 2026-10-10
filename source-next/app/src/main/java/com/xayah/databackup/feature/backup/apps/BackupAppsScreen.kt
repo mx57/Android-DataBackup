@@ -371,6 +371,8 @@ fun BackupAppsScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    // Mass selection actions for the currently filtered/searched list.
                     val sortsScrollState = rememberScrollState()
 
                     Row(modifier = Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
