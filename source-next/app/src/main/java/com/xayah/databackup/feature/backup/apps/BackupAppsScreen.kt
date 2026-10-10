@@ -1,6 +1,7 @@
 package com.xayah.databackup.feature.backup.apps
 
 import android.content.pm.UserInfo
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -113,7 +114,7 @@ fun BackupAppsScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = showSearchBar) {
+    BackHandler(enabled = showSearchBar) {
         viewModel.setSearchQuery("")
         showSearchBar = false
     }
@@ -283,6 +284,53 @@ fun BackupAppsScreen(
                 Column {
                     Text(
                         modifier = Modifier.padding(start = 24.dp),
+                        text = stringResource(R.string.dashboard_actions),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    val actionsScrollState = rememberScrollState()
+                    Row(
+                        modifier = Modifier
+                            .padding(vertical = 24.dp)
+                            .horizontalScroll(actionsScrollState)
+                            .horizontalFadingEdges(actionsScrollState),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        Spacer(modifier = Modifier.size(0.dp))
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.select_all),
+                            icon = ImageVector.vectorResource(R.drawable.ic_check),
+                            colors = filterButtonSecondaryColors(),
+                        ) {
+                            viewModel.selectAllFiltered(filterUser, true)
+                        }
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.unselect_all),
+                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x),
+                            colors = filterButtonSecondaryColors(),
+                        ) {
+                            viewModel.selectAllFiltered(filterUser, false)
+                        }
+                        FilterButton(
+                            selected = false,
+                            title = stringResource(R.string.reverse_selection),
+                            icon = ImageVector.vectorResource(R.drawable.ic_layout_grid),
+                            colors = filterButtonSecondaryColors(),
+                        ) {
+                            viewModel.reverseSelectionFiltered(filterUser)
+                        }
+                        Spacer(modifier = Modifier.size(0.dp))
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 12.dp)
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(start = 24.dp),
                         text = stringResource(R.string.users),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
@@ -426,7 +474,6 @@ fun BackupAppsScreen(
                         }
                         Spacer(modifier = Modifier.size(0.dp))
                     }
-
                     HorizontalDivider(
                         modifier = Modifier
                             .padding(horizontal = 24.dp)
@@ -439,8 +486,6 @@ fun BackupAppsScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
-                    // Mass selection actions for the currently filtered/searched list.
                     val actionsScrollState = rememberScrollState()
                     Row(
                         modifier = Modifier
@@ -453,26 +498,26 @@ fun BackupAppsScreen(
                         FilterButton(
                             selected = false,
                             title = stringResource(R.string.select_all),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_check)
+                            icon = ImageVector.vectorResource(R.drawable.ic_check),
+                            colors = filterButtonSecondaryColors()
                         ) {
                             viewModel.selectAllFiltered(filterUser, true)
                         }
                         FilterButton(
                             selected = false,
-                            title = stringResource(R.string.unselect_all),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x)
+                            title = stringResource(R.string.reverse_selection),
+                            icon = ImageVector.vectorResource(R.drawable.ic_arrow_down_a_z),
+                            colors = filterButtonSecondaryColors()
                         ) {
-                            viewModel.selectAllFiltered(filterUser, false)
+                            viewModel.reverseSelectionFiltered(filterUser)
                         }
                         FilterButton(
                             selected = false,
-                            title = stringResource(R.string.reverse_selection),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_layout_grid)
+                            title = stringResource(R.string.unselect_all),
+                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x),
+                            colors = filterButtonSecondaryColors()
                         ) {
-                            viewModel.reverseSelectionFiltered(filterUser)
+                            viewModel.selectAllFiltered(filterUser, false)
                         }
                         Spacer(modifier = Modifier.size(0.dp))
                     }

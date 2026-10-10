@@ -202,21 +202,14 @@ open class AppsViewModel : BaseViewModel() {
     }
 
     fun selectAllFiltered(userId: Int, toggleableState: ToggleableState) {
-        val packageNames = apps.value.map { it.packageName }
-        if (packageNames.isEmpty()) return
-        withLock(Dispatchers.IO) {
-            val selected = when (toggleableState) {
-                ToggleableState.On -> false
-                ToggleableState.Off -> true
-                ToggleableState.Indeterminate -> true
-            }
-            DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
+        val selected = when (toggleableState) {
+            ToggleableState.On -> false
+            ToggleableState.Off -> true
+            ToggleableState.Indeterminate -> true
         }
+        selectAllFiltered(userId, selected)
     }
 
-    /**
-     * Updates the selection state for all currently filtered apps.
-     */
     fun selectAllFiltered(userId: Int, selected: Boolean) {
         val packageNames = apps.value.map { it.packageName }
         if (packageNames.isEmpty()) return
@@ -225,9 +218,6 @@ open class AppsViewModel : BaseViewModel() {
         }
     }
 
-    /**
-     * Inverts the selection state for all currently filtered apps.
-     */
     fun reverseSelectionFiltered(userId: Int) {
         val packageNames = apps.value.map { it.packageName }
         if (packageNames.isEmpty()) return
@@ -240,12 +230,10 @@ open class AppsViewModel : BaseViewModel() {
         viewModelScope.launch {
             _isRefreshing.value = true
             runCatching {
-                val activeUsers = RemoteRootService.getUsers()
-                val activeUserIds = activeUsers.map { it.id }
+                val activeUserIds = RemoteRootService.getUsers().map { it.id }
                 if (activeUserIds.isNotEmpty()) {
                     DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
                 }
-
                 val apps = RemoteRootService.getInstalledApps()
                 val activeUsers = RemoteRootService.getUsers()
                 val activeUserIds = activeUsers.map { it.id }.toSet()
