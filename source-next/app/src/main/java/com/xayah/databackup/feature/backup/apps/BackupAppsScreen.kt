@@ -1,6 +1,7 @@
 package com.xayah.databackup.feature.backup.apps
 
 import android.content.pm.UserInfo
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -113,7 +114,7 @@ fun BackupAppsScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = showSearchBar) {
+    BackHandler(enabled = showSearchBar) {
         viewModel.setSearchQuery("")
         showSearchBar = false
     }
