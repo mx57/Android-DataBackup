@@ -308,24 +308,24 @@ fun BackupAppsScreen(
                         FilterButton(
                             selected = false,
                             title = stringResource(R.string.select_all),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_check)
+                            icon = ImageVector.vectorResource(R.drawable.ic_check),
+                            colors = filterButtonSecondaryColors()
                         ) {
                             viewModel.selectAllFiltered(filterUser, true)
                         }
                         FilterButton(
                             selected = false,
                             title = stringResource(R.string.unselect_all),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x)
+                            icon = ImageVector.vectorResource(R.drawable.ic_circle_x),
+                            colors = filterButtonSecondaryColors()
                         ) {
                             viewModel.selectAllFiltered(filterUser, false)
                         }
                         FilterButton(
                             selected = false,
                             title = stringResource(R.string.reverse_selection),
-                            colors = filterButtonSecondaryColors(),
-                            icon = ImageVector.vectorResource(R.drawable.ic_layout_grid)
+                            icon = ImageVector.vectorResource(R.drawable.ic_layout_grid),
+                            colors = filterButtonSecondaryColors()
                         ) {
                             viewModel.reverseSelectionFiltered(filterUser)
                         }

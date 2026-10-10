@@ -201,6 +201,14 @@ open class AppsViewModel : BaseViewModel() {
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
+    fun selectAllFiltered(userId: Int, selected: Boolean) {
+        val packageNames = apps.value.map { it.packageName }
+        if (packageNames.isEmpty()) return
+        withLock(Dispatchers.IO) {
+            DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
+        }
+    }
+
     fun selectAllFiltered(userId: Int, toggleableState: ToggleableState) {
         val selected = when (toggleableState) {
             ToggleableState.On -> false
@@ -208,14 +216,6 @@ open class AppsViewModel : BaseViewModel() {
             ToggleableState.Indeterminate -> true
         }
         selectAllFiltered(userId, selected)
-    }
-
-    fun selectAllFiltered(userId: Int, selected: Boolean) {
-        val packageNames = apps.value.map { it.packageName }
-        if (packageNames.isEmpty()) return
-        withLock(Dispatchers.IO) {
-            DatabaseHelper.appDao.selectAll(packageNames, userId, selected)
-        }
     }
 
     fun reverseSelectionFiltered(userId: Int) {
