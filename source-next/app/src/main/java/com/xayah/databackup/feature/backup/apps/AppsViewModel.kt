@@ -230,9 +230,15 @@ open class AppsViewModel : BaseViewModel() {
         viewModelScope.launch {
             _isRefreshing.value = true
             runCatching {
-                val activeUserIds = RemoteRootService.getUsers().map { it.id }
-                if (activeUserIds.isNotEmpty()) {
-                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }.toSet()
+
+                // Get user IDs from local DB and delete inactive users
+                val localApps = DatabaseHelper.appDao.loadFlowApps().first()
+                val localUserIds = localApps.map { it.userId }.toSet()
+                val inactiveUserIds = localUserIds - activeUserIds
+                inactiveUserIds.forEach { userId ->
+                    DatabaseHelper.appDao.deleteByUserId(userId)
                 }
                 val apps = RemoteRootService.getInstalledApps()
                 val activeUsers = RemoteRootService.getUsers()
@@ -247,11 +253,11 @@ open class AppsViewModel : BaseViewModel() {
                 val groupedApps = apps.groupBy { it.userId }
                 activeUserIds.forEach { userId ->
                     val userApps = groupedApps[userId] ?: emptyList()
-                    if (userApps.isNotEmpty()) {
-                        val packageNames = userApps.map { it.packageName }
-                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
-                    } else {
+                    val packageNames = userApps.map { it.packageName }
+                    if (packageNames.isEmpty()) {
                         DatabaseHelper.appDao.deleteByUserId(userId)
+                    } else {
+                        DatabaseHelper.appDao.deleteExcept(packageNames, userId)
                     }
                 }
 
