@@ -240,6 +240,12 @@ open class AppsViewModel : BaseViewModel() {
         viewModelScope.launch {
             _isRefreshing.value = true
             runCatching {
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }
+                if (activeUserIds.isNotEmpty()) {
+                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
+                }
+
                 val apps = RemoteRootService.getInstalledApps()
                 val activeUsers = RemoteRootService.getUsers()
                 val activeUserIds = activeUsers.map { it.id }.toSet()
