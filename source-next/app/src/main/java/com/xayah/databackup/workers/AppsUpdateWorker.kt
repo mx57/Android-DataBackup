@@ -30,6 +30,12 @@ class AppsUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
         setForeground(getForegroundInfo())
         withContext(Dispatchers.Default) {
             runCatching {
+                val activeUsers = RemoteRootService.getUsers()
+                val activeUserIds = activeUsers.map { it.id }
+                if (activeUserIds.isNotEmpty()) {
+                    DatabaseHelper.appDao.deleteExceptUserIds(activeUserIds)
+                }
+
                 val apps = RemoteRootService.getInstalledApps()
                 val users = RemoteRootService.getUsers()
                 val activeUserIds = users.map { it.id }.toSet()
